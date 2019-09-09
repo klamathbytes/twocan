@@ -1,0 +1,10 @@
+version: '3'
+services:
+  db:
+    image: postgres:11-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./sql/twocan.sql:/docker-entrypoint-initdb.d/twocan.sql
+    environment:
+      - POSTGRES_PASSWORD=twocan
