@@ -1,37 +1,9 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+require('dotenv').config()
+const parse = require('./parse')
+const db = require('./db')
 
-async function parse() {
-  const { data } = await axios.get('https://www.congress.gov/help/field-values/member-bioguide-ids');
-  const $ = cheerio.load(data);
-  const members = $('main table tr')
-    .map((i, el) => ({
-      name: $(el).find('td:first-child').text().trim(),
-      id: $(el).find('td:last-child').text().trim(),
-    }))
-    .get()
-    .filter(({ id }) => !!id)
-    .map(({ name, id }) => {
-      const [_, fullName, partyAndState] = name.match(/(.+)(\(.+\))/);
-      const [party, state] = partyAndState.replace(/[()]/g, '').split('-').map(el => el.trim());
-      const [familyName, givenName, middleName] = fullName.trim().split(' ').map(el => el.replace(/(,|\.)/g, '').trim())
-      return {
-        id,
-        familyName,
-        givenName,
-        middleName: middleName || '',
-        party,
-        state,
-      };
-    });
-
-  console.log(JSON.stringify(members, null, 2))
-}
-
-(async () => {
-  try {
-    parse();
-  } catch (e) {
-
-  }
-})();
+parse().then(data => {
+  const text = 'INSERT INTO individual(bio_id, given_name, additional_name, family_name) VALUES($1, $2, $3, $4)'
+  const members = data.map(({ id, givenName, additionalName, familyName }) => [id, givenName, additionalName, familyName])
+  return Promise.all(members.map(member => db.query({ text, values: member })))
+})

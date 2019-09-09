@@ -1,5 +1,7 @@
 CREATE DATABASE twocan;
 
+\c twocan;
+
 CREATE TABLE "public"."party" (
   "party_id" SERIAL PRIMARY KEY,
   "name" varchar(256) NOT NULL CHECK (name <> ''),
