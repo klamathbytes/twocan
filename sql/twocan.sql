@@ -30,12 +30,53 @@ CREATE TABLE "public"."party_roster" (
 ALTER TABLE "public"."party_roster" ADD CONSTRAINT "party_roster_id" PRIMARY KEY ("party_id", "bio_id", "start_at");
 
 CREATE TABLE "public"."individual_endorsement" (
+  "bio_sen_id" varchar(512) PRIMARY KEY,
   "senate_id" varchar(256) NOT NULL DEFAULT '0',
   "bio_id" varchar(256) REFERENCES "public"."individual" ("bio_id"),
   "start_at" timestamp NOT NULL,
   "end_at" timestamp
 );
-ALTER TABLE "public"."individual_endorsement" ADD CONSTRAINT "individual_endorsement_id" PRIMARY KEY ("senate_id", "bio_id", "start_at");
+
+CREATE OR REPLACE FUNCTION "public"."create_individual_endorsement_id"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
+    BEGIN
+      NEW.bio_sen_id := bio_id||'.'||senate_id;
+      RETURN NEW;
+    END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+
+CREATE TRIGGER "individual_endorsement_id" BEFORE INSERT OR UPDATE ON "public"."individual_endorsement"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."create_individual_endorsement_id"();
+
+CREATE TYPE sponsor AS ENUM ('sponsor', 'cosponsor');
+CREATE TYPE chamber AS ENUM ('house', 'senate');
+
+CREATE TABLE "public"."document" (
+  "doc_id" varchar(256) NOT NULL PRIMARY KEY,
+  "committees" jsonb,
+  "chamber_of_origin" chamber,
+  "doc_type" varchar(64) NOT NULL,
+  "start_at" timestamp NOT NULL
+);
+
+CREATE TABLE "public"."endorsement" (
+  "bio_sen_id" varchar(512) REFERENCES "public"."individual_endorsement" ("bio_sen_id"),
+  "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
+  "sponsor" sponsor,
+  "start_at" timestamp NOT NULL,
+  "end_at" timestamp
+);
+
+CREATE TABLE "public"."document_history" (
+  "record_id" SERIAL PRIMARY KEY,
+  "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
+  "classifier" varchar(64) NOT NULL,
+  "data" jsonb,
+  "start_at" timestamp
+);
 
 CREATE TABLE "public"."congress" (
   "congress_id" varchar(256) PRIMARY KEY,
@@ -45,7 +86,7 @@ CREATE TABLE "public"."congress" (
   "end_at" timestamp NOT NULL
 );
 
-CREATE OR REPLACE FUNCTION "public"."congress_id"()
+CREATE OR REPLACE FUNCTION "public"."create_congress_id"()
   RETURNS "pg_catalog"."trigger" AS $BODY$
     BEGIN
       NEW.congress_id := meeting_id||'.'||session_id;
@@ -54,6 +95,10 @@ CREATE OR REPLACE FUNCTION "public"."congress_id"()
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+
+CREATE TRIGGER "congress_id" BEFORE INSERT OR UPDATE ON "public"."congress"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."create_congress_id"();
 
 CREATE TABLE "public"."committee" (
   "committee_id" integer NOT NULL PRIMARY KEY,
