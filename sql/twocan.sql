@@ -1,26 +1,22 @@
+DROP DATABASE IF EXISTS twocan;
 CREATE DATABASE twocan;
 
 \c twocan;
 
+DROP TABLE IF EXISTS "public"."party";
 CREATE TABLE "public"."party" (
   "party_id" SERIAL PRIMARY KEY,
   "name" varchar(256) NOT NULL CHECK (name <> ''),
   "short_name" varchar(256)
 );
 
+DROP TABLE IF EXISTS "public"."individual";
 CREATE TABLE "public"."individual" (
   "bio_id" varchar(64) NOT NULL PRIMARY KEY,
-  "honorific_prefix" varchar(8),
-  "given_name" varchar(64),
-  "additional_name" varchar(64),
-  "family_name" varchar(64),
-  "honorific_suffix" varchar(64),
-  "contact" jsonb,
-  "bday" timestamp,
-  "sex" varchar(1),
-  "photo" varchar(256)
+  "data" jsonb
 );
 
+DROP TABLE IF EXISTS "public"."party_roster";
 CREATE TABLE "public"."party_roster" (
   "party_id" int4 REFERENCES "public"."party" ("party_id"),
   "bio_id" varchar(256) REFERENCES "public"."individual" ("bio_id"),
@@ -29,6 +25,7 @@ CREATE TABLE "public"."party_roster" (
 );
 ALTER TABLE "public"."party_roster" ADD CONSTRAINT "party_roster_id" PRIMARY KEY ("party_id", "bio_id", "start_at");
 
+DROP TABLE IF EXISTS "public"."individual_endorsement";
 CREATE TABLE "public"."individual_endorsement" (
   "bio_sen_id" varchar(512) PRIMARY KEY,
   "senate_id" varchar(256) NOT NULL DEFAULT '0',
@@ -47,13 +44,17 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
+DROP TRIGGER IF EXISTS "individual_endorsement_id" ON "public"."individual_endorsement";
 CREATE TRIGGER "individual_endorsement_id" BEFORE INSERT OR UPDATE ON "public"."individual_endorsement"
 FOR EACH ROW
 EXECUTE PROCEDURE "public"."create_individual_endorsement_id"();
 
+DROP TYPE IF EXISTS sponsor;
 CREATE TYPE sponsor AS ENUM ('sponsor', 'cosponsor');
+DROP TYPE IF EXISTS chamber;
 CREATE TYPE chamber AS ENUM ('house', 'senate');
 
+DROP TABLE IF EXISTS "public"."document";
 CREATE TABLE "public"."document" (
   "doc_id" varchar(256) NOT NULL PRIMARY KEY,
   "committees" jsonb,
@@ -62,6 +63,7 @@ CREATE TABLE "public"."document" (
   "start_at" timestamp NOT NULL
 );
 
+DROP TABLE IF EXISTS "public"."endorsement";
 CREATE TABLE "public"."endorsement" (
   "bio_sen_id" varchar(512) REFERENCES "public"."individual_endorsement" ("bio_sen_id"),
   "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
@@ -70,6 +72,7 @@ CREATE TABLE "public"."endorsement" (
   "end_at" timestamp
 );
 
+DROP TABLE IF EXISTS "public"."document_history";
 CREATE TABLE "public"."document_history" (
   "record_id" SERIAL PRIMARY KEY,
   "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
@@ -78,6 +81,7 @@ CREATE TABLE "public"."document_history" (
   "start_at" timestamp
 );
 
+DROP TABLE IF EXISTS "public"."congress";
 CREATE TABLE "public"."congress" (
   "congress_id" varchar(256) PRIMARY KEY,
   "meeting_id" integer NOT NULL,
@@ -96,10 +100,12 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
+DROP TRIGGER IF EXISTS "congress_id" ON "public"."congress";
 CREATE TRIGGER "congress_id" BEFORE INSERT OR UPDATE ON "public"."congress"
 FOR EACH ROW
 EXECUTE PROCEDURE "public"."create_congress_id"();
 
+DROP TABLE IF EXISTS "public"."committee";
 CREATE TABLE "public"."committee" (
   "committee_id" integer NOT NULL PRIMARY KEY,
   "parent_committee_id" integer,
@@ -107,6 +113,7 @@ CREATE TABLE "public"."committee" (
 	"type" varchar(256) NOT NULL
 );
 
+DROP TABLE IF EXISTS "public"."congress_roster";
 CREATE TABLE "public"."congress_roster" (
   "bio_id" varchar(256) NOT NULL REFERENCES "public"."individual" ("bio_id"),
   "committee_id" integer NOT NULL REFERENCES "public"."committee" ("committee_id"),
