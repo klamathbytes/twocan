@@ -7,4 +7,4 @@ docker-compose up -d
 while ! nc -z localhost 5432; do sleep 1; done
 
 echo "Populating database, this may take some time"
-time node index.js
+time npm start
