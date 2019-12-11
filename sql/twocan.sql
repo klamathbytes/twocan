@@ -122,3 +122,12 @@ CREATE TABLE "public"."congress_roster" (
 	"end_at" timestamp
 );
 ALTER TABLE "public"."congress_roster" ADD CONSTRAINT "congress_roster_id" PRIMARY KEY ("bio_id", "committee_id", "congress_id","start_at");
+
+DROP TABLE IF EXISTS "public"."raw";
+CREATE TABLE "public"."raw"
+(
+  raw_id SERIAL PRIMARY KEY,
+  raw_data jsonb,
+  raw_file varchar(128),
+  raw_date timestamp DEFAULT CURRENT_TIMESTAMP
+);
