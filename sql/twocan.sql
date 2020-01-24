@@ -3,6 +3,16 @@ CREATE DATABASE twocan;
 
 \c twocan;
 
+DROP TABLE IF EXISTS "public"."raw";
+CREATE TABLE "public"."raw"
+(
+  raw_id SERIAL PRIMARY KEY,
+  raw_data jsonb,
+  raw_file varchar(128),
+  raw_date timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+
 DROP TABLE IF EXISTS "public"."party";
 CREATE TABLE "public"."party" (
   "party_id" SERIAL PRIMARY KEY,
@@ -25,8 +35,8 @@ CREATE TABLE "public"."party_roster" (
 );
 ALTER TABLE "public"."party_roster" ADD CONSTRAINT "party_roster_id" PRIMARY KEY ("party_id", "bio_id", "start_at");
 
-DROP TABLE IF EXISTS "public"."individual_endorsement";
-CREATE TABLE "public"."individual_endorsement" (
+DROP TABLE IF EXISTS "public"."senate_list";
+CREATE TABLE "public"."senate_list" (
   "bio_sen_id" varchar(512) PRIMARY KEY,
   "senate_id" varchar(256) NOT NULL DEFAULT '0',
   "bio_id" varchar(256) REFERENCES "public"."individual" ("bio_id"),
@@ -34,7 +44,7 @@ CREATE TABLE "public"."individual_endorsement" (
   "end_at" timestamp
 );
 
-CREATE OR REPLACE FUNCTION "public"."create_individual_endorsement_id"()
+CREATE OR REPLACE FUNCTION "public"."create_individual_senate_id"()
   RETURNS "pg_catalog"."trigger" AS $BODY$
     BEGIN
       NEW.bio_sen_id := bio_id||'.'||senate_id;
@@ -44,10 +54,10 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
-DROP TRIGGER IF EXISTS "individual_endorsement_id" ON "public"."individual_endorsement";
-CREATE TRIGGER "individual_endorsement_id" BEFORE INSERT OR UPDATE ON "public"."individual_endorsement"
+DROP TRIGGER IF EXISTS "individual_senate_id" ON "public"."senate_list";
+CREATE TRIGGER "individual_senate_id" BEFORE INSERT OR UPDATE ON "public"."senate_list"
 FOR EACH ROW
-EXECUTE PROCEDURE "public"."create_individual_endorsement_id"();
+EXECUTE PROCEDURE "public"."create_individual_senate_id"();
 
 DROP TYPE IF EXISTS sponsor;
 CREATE TYPE sponsor AS ENUM ('sponsor', 'cosponsor');
@@ -59,13 +69,14 @@ CREATE TABLE "public"."document" (
   "doc_id" varchar(256) NOT NULL PRIMARY KEY,
   "committees" jsonb,
   "chamber_of_origin" chamber,
-  "doc_type" varchar(64) NOT NULL,
-  "start_at" timestamp NOT NULL
+  "doc_type" varchar(64), --NOT NULL,
+  "start_at" timestamp --,
+  --raw_id" int REFERENCES "public"."raw" ("raw_id")
 );
 
 DROP TABLE IF EXISTS "public"."endorsement";
 CREATE TABLE "public"."endorsement" (
-  "bio_sen_id" varchar(512) REFERENCES "public"."individual_endorsement" ("bio_sen_id"),
+  "bio_id" varchar(512) REFERENCES "public"."individual" ("bio_id"),
   "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
   "sponsor" sponsor,
   "start_at" timestamp NOT NULL,
@@ -76,7 +87,7 @@ DROP TABLE IF EXISTS "public"."document_history";
 CREATE TABLE "public"."document_history" (
   "record_id" SERIAL PRIMARY KEY,
   "doc_id" varchar(256) REFERENCES "public"."document" ("doc_id"),
-  "classifier" varchar(64) NOT NULL,
+  "doc_type" varchar(64), --NOT NULL,
   "data" jsonb,
   "start_at" timestamp
 );
@@ -123,11 +134,3 @@ CREATE TABLE "public"."congress_roster" (
 );
 ALTER TABLE "public"."congress_roster" ADD CONSTRAINT "congress_roster_id" PRIMARY KEY ("bio_id", "committee_id", "congress_id","start_at");
 
-DROP TABLE IF EXISTS "public"."raw";
-CREATE TABLE "public"."raw"
-(
-  raw_id SERIAL PRIMARY KEY,
-  raw_data jsonb,
-  raw_file varchar(128),
-  raw_date timestamp DEFAULT CURRENT_TIMESTAMP
-);
