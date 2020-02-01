@@ -1,0 +1,25 @@
+Current House Members with Committee and Subcommittee Assignments
+http://clerk.house.gov/xml/lists/MemberData.xml
+
+Current and Past House Committees
+https://www.congress.gov/help/field-values/current-committees
+
+Example House Committee and Subcommittee Information URL
+http://clerk.house.gov/committee_info/index.aspx?comcode=AG00
+http://clerk.house.gov/committee_info/index.aspx?subcomcode=AG03
+
+Senate XML
+https://www.senate.gov/general/XML.htm
+
+Current Senate Members with Committee and Subcommittee Assignments
+https://www.senate.gov/legislative/LIS_MEMBER/cvc_member_data.xml
+
+Members (Sponsors and Cosponsors) with Stats
+https://www.congress.gov/sponsors-cosponsors/116th-congress/senators/ALL
+https://www.congress.gov/sponsors-cosponsors/116th-congress/representatives/ALL
+
+Example Member URL
+https://www.congress.gov/member/ralph-abraham/A000374
+
+Members
+https://www.congress.gov/members
